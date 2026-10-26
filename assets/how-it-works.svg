@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <style>
+    .bg { fill: #ffffff; }
+    .card { fill: #f3fbf7; stroke: #b9e6d3; }
+    .hero { fill: #e3f7ee; stroke: #10b981; }
+    .claude { fill: #0d3529; stroke: #0d3529; }
+    .warn { fill: #fff8e6; stroke: #f5c451; }
+    .ok { fill: #f3fbf7; stroke: #b9e6d3; stroke-dasharray: 5 5; }
+    .ink { fill: #0b2a22; } .muted { fill: #557a6e; } .accent { fill: #059669; } .amber { fill: #b45309; }
+    .onclaude { fill: #ecfdf5; } .onclaude-muted { fill: #8fd3b8; }
+    .wire { stroke: #8cc9b1; fill: none; stroke-width: 2; }
+    .tag { fill: #059669; } .tag-text { fill: #ffffff; }
+    .pill { fill: #ffffff; stroke: #b9e6d3; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .card { fill: #0f2a22; stroke: #1f5446; }
+      .hero { fill: #0f3a2d; stroke: #34d399; }
+      .claude { fill: #34d399; stroke: #34d399; }
+      .warn { fill: #2a2312; stroke: #a07a1f; }
+      .ok { fill: #0f2a22; stroke: #1f5446; }
+      .ink { fill: #ecfdf5; } .muted { fill: #8fb5a8; } .accent { fill: #34d399; } .amber { fill: #fbbf24; }
+      .onclaude { fill: #04140f; } .onclaude-muted { fill: #0b4a36; }
+      .wire { stroke: #2f6b58; }
+      .tag { fill: #34d399; } .tag-text { fill: #04140f; }
+      .pill { fill: #0d1117; stroke: #1f5446; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" class="accent"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1200" height="780" rx="16"/>
+
+  <!-- 1. message -->
+  <rect class="pill" x="440" y="28" width="320" height="52" rx="26" stroke-width="1.5"/>
+  <text class="ink" x="600" y="61" font-size="18" font-weight="600" text-anchor="middle">Tú escribes un mensaje</text>
+
+  <path class="wire" d="M600 80 V112" marker-end="url(#arrow)"/>
+
+  <!-- 2. advisor -->
+  <rect class="hero" x="330" y="116" width="540" height="96" rx="16" stroke-width="2"/>
+  <rect class="tag" x="350" y="132" width="78" height="24" rx="12"/>
+  <text class="tag-text" x="389" y="149" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="0.6">0 TOKENS</text>
+  <text class="ink" x="444" y="151" font-size="22" font-weight="700">Asesor</text>
+  <text class="muted" x="350" y="188" font-size="16">Clasifica la tarea en local y mira el tamaño del contexto</text>
+
+  <!-- branches to 3 outcomes -->
+  <path class="wire" d="M600 212 V236 H230 V262" marker-end="url(#arrow)"/>
+  <path class="wire" d="M600 236 V262" marker-end="url(#arrow)"/>
+  <path class="wire" d="M600 236 H970 V262" marker-end="url(#arrow)"/>
+
+  <rect class="warn" x="60" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
+  <text class="amber" x="84" y="296" font-size="12" font-weight="700" letter-spacing="1">EL MODELO NO ENCAJA</text>
+  <text class="ink" x="84" y="326" font-size="17" font-weight="600">Aviso: modelo y esfuerzo</text>
+  <text class="muted" x="84" y="350" font-size="14">«Tarea ligera → basta con Haiku»</text>
+
+  <rect class="warn" x="430" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
+  <text class="amber" x="454" y="296" font-size="12" font-weight="700" letter-spacing="1">TAREA NUEVA O CONTEXTO GRANDE</text>
+  <text class="ink" x="454" y="326" font-size="17" font-weight="600">Aviso: /clear o /compact</text>
+  <text class="muted" x="454" y="350" font-size="14">También si el caché ha caducado</text>
+
+  <rect class="ok" x="800" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
+  <text class="accent" x="824" y="296" font-size="12" font-weight="700" letter-spacing="1">TODO ENCAJA</text>
+  <text class="ink" x="824" y="326" font-size="17" font-weight="600">Sin aviso</text>
+  <text class="muted" x="824" y="350" font-size="14">El asesor no dice nada</text>
+
+  <!-- merge into Claude -->
+  <path class="wire" d="M230 370 V396 H970 V370"/>
+  <path class="wire" d="M600 370 V420" marker-end="url(#arrow)"/>
+
+  <!-- 3. Claude -->
+  <rect class="claude" x="380" y="424" width="440" height="68" rx="16"/>
+  <text class="onclaude" x="600" y="466" font-size="21" font-weight="700" text-anchor="middle">Claude trabaja</text>
+
+  <!-- branches to tools -->
+  <path class="wire" d="M600 492 V516 H330 V542" marker-end="url(#arrow)"/>
+  <path class="wire" d="M600 516 H870 V542" marker-end="url(#arrow)"/>
+
+  <rect class="card" x="120" y="546" width="420" height="108" rx="14" stroke-width="1.5"/>
+  <text class="accent" x="144" y="576" font-size="12" font-weight="700" letter-spacing="1">BÚSQUEDA AMPLIA</text>
+  <text class="ink" x="144" y="606" font-size="17" font-weight="600">Agente scout en Haiku</text>
+  <text class="muted" x="144" y="630" font-size="14">Busca y devuelve solo la conclusión</text>
+
+  <rect class="card" x="660" y="546" width="420" height="108" rx="14" stroke-width="1.5"/>
+  <text class="accent" x="684" y="576" font-size="12" font-weight="700" letter-spacing="1">EJECUTA BASH</text>
+  <text class="ink" x="684" y="606" font-size="17" font-weight="600">¿Más de 6000 caracteres de salida?</text>
+  <text class="muted" x="684" y="630" font-size="14">cat, sed, grep y git diff nunca se tocan</text>
+
+  <!-- compaction outcomes -->
+  <path class="wire" d="M870 654 V676 H770 V698" marker-end="url(#arrow)"/>
+  <path class="wire" d="M870 676 H985 V698" marker-end="url(#arrow)"/>
+
+  <rect class="hero" x="660" y="702" width="220" height="56" rx="12" stroke-width="1.5"/>
+  <text class="accent" x="680" y="725" font-size="12" font-weight="700" letter-spacing="1">SÍ</text>
+  <text class="ink" x="680" y="745" font-size="13" font-weight="600">Principio + errores + final</text>
+
+  <rect class="ok" x="890" y="702" width="190" height="56" rx="12" stroke-width="1.5"/>
+  <text class="muted" x="910" y="725" font-size="12" font-weight="700" letter-spacing="1">NO</text>
+  <text class="ink" x="910" y="745" font-size="14" font-weight="600">Salida tal cual</text>
+</svg>

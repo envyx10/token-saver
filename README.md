@@ -3,10 +3,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square" alt="Claude Code plugin">
+  <img src="https://img.shields.io/badge/Claude_Code-plugin-10b981?style=flat-square" alt="Claude Code plugin">
   <img src="https://img.shields.io/badge/node-%E2%89%A518-3c873a?style=flat-square" alt="Node 18+">
-  <img src="https://img.shields.io/badge/dependencias-0-informational?style=flat-square" alt="Sin dependencias">
-  <img src="https://img.shields.io/badge/licencia-MIT-blue?style=flat-square" alt="MIT">
+  <img src="https://img.shields.io/badge/dependencias-0-10b981?style=flat-square" alt="Sin dependencias">
+  <img src="https://img.shields.io/badge/licencia-MIT-10b981?style=flat-square" alt="MIT">
 </p>
 
 <p align="center">
@@ -64,19 +64,9 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 
 ## Cómo funciona
 
-```mermaid
-flowchart TD
-    U([Tú escribes un mensaje]) --> A["🧭 Asesor<br/>clasifica la tarea y mira el contexto"]
-    A -- "modelo no encaja" --> M["Aviso: modelo y esfuerzo recomendados"]
-    A -- "tarea nueva o contexto grande" --> W["Aviso: /clear o /compact"]
-    A -- "todo bien" --> C
-    M --> C
-    W --> C[Claude trabaja]
-    C -- "búsqueda amplia" --> S["🔭 scout en Haiku<br/>devuelve solo la conclusión"]
-    C -- "ejecuta Bash" --> K{"✂️ ¿salida > 6000 caracteres?"}
-    K -- sí --> R["Principio + errores + final"]
-    K -- no --> O[Salida tal cual]
-```
+<p align="center">
+  <img src="assets/how-it-works.svg" alt="Flujo: el asesor revisa cada mensaje antes de que Claude trabaje; scout y la compactación actúan durante el trabajo" width="100%">
+</p>
 
 ### ✂️ Así queda una salida compactada
 
@@ -240,6 +230,8 @@ No hay que hacer nada: al enviar un mensaje, el asesor lo clasifica en local y, 
 | Vuelves tras más de 1 h | `2 h sin actividad: el caché ha caducado y este mensaje re-procesa ~80k a precio completo.` |
 | El contexto pasa de 150k (y cada 100k más) | `El contexto va por ~200k… ¿Otra tarea? /clear. ¿La misma? /compact.` |
 
+**Habla tu idioma**: si escribes en español, los avisos salen en español. Si escribes en inglés, en inglés.
+
 **Reglas para que no sea pesado**
 
 - Los seguimientos cortos («sí», «dale», «hazlo ya», «continúa») y los comandos `/…` no se analizan nunca.
@@ -274,7 +266,7 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 | Variable | Por defecto | Qué controla |
 |---|---|---|
 | `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez para que cambies antes, `off` desactiva el asesor |
-| `TOKEN_SAVER_LANG` | `es` | Idioma de los avisos: `es` o `en` |
+| `TOKEN_SAVER_LANG` | `auto` | Idioma de los avisos. `auto` responde en el idioma en que escribes (español o inglés). `es` o `en` lo fijan |
 | `TOKEN_SAVER_WARN_AT` | `150000` | Tokens de contexto a partir de los que llega el primer aviso de tamaño |
 | `TOKEN_SAVER_MAX_CHARS` | `6000` | Caracteres de salida de Bash a partir de los que se compacta |
 | `TOKEN_SAVER_COMPACT` | `1` | Pon `0` para desactivar la compactación |
@@ -304,7 +296,8 @@ token-saver/
 │   └── marketplace.json         # marketplace "pgdiaz-tools"
 ├── assets/
 │   ├── banner.svg
-│   └── context-growth.svg
+│   ├── context-growth.svg
+│   └── how-it-works.svg
 └── plugins/token-saver/
     ├── .claude-plugin/
     │   └── plugin.json          # manifiesto del plugin
@@ -332,7 +325,7 @@ Sin dependencias: solo Node y su librería estándar.
 - **Claude Code no le dice al hook qué esfuerzo tienes puesto.** El modelo se lee de la transcripción, pero el esfuerzo no: el asesor lo recomienda sin poder compararlo con el tuyo.
 - La auditoría estima los tokens de las salidas de herramientas a razón de ~4 caracteres por token. Los totales de contexto y de salida, en cambio, son los que registra Claude Code.
 - La compactación usa heurísticas: si alguna vez se pierde una línea importante, Claude puede leer la salida completa desde el fichero temporal, y tú puedes añadir `# full` al comando.
-- Los avisos del asesor salen en español (o en inglés con `TOKEN_SAVER_LANG=en`). La nota de compactación va en inglés porque la lee Claude, no tú.
+- Los avisos del asesor salen en el idioma en que escribes: español si escribes en español, inglés si no. En mensajes ambiguos («ok», código) usa el último idioma detectado o el de tu sistema. La nota de compactación va en inglés porque la lee Claude, no tú.
 
 ---
 

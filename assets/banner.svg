@@ -1,42 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1a1714"/>
-      <stop offset="1" stop-color="#2a211b"/>
+      <stop offset="0" stop-color="#062019"/>
+      <stop offset="1" stop-color="#0d3529"/>
     </linearGradient>
-    <linearGradient id="hot" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#d97757"/>
-      <stop offset="1" stop-color="#f0a47f"/>
-    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.3" r="0.6">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#34d399" fill-opacity="0.09"/>
+    </pattern>
   </defs>
-  <rect width="1200" height="360" rx="24" fill="url(#bg)"/>
 
-  <!-- before: context grows every turn -->
-  <g transform="translate(690 300)">
-    <g fill="#4a3f37">
-      <rect x="0"   y="-40"  width="34" height="40"  rx="5"/>
-      <rect x="44"  y="-70"  width="34" height="70"  rx="5"/>
-      <rect x="88"  y="-105" width="34" height="105" rx="5"/>
-      <rect x="132" y="-145" width="34" height="145" rx="5"/>
-      <rect x="176" y="-190" width="34" height="190" rx="5"/>
-      <rect x="220" y="-235" width="34" height="235" rx="5"/>
+  <rect width="1200" height="340" rx="20" fill="url(#bg)"/>
+  <rect width="1200" height="340" rx="20" fill="url(#dots)"/>
+  <rect width="1200" height="340" rx="20" fill="url(#glow)"/>
+
+  <!-- left: title -->
+  <g transform="translate(64 0)">
+    <rect x="0" y="62" width="132" height="28" rx="14" fill="#34d399" fill-opacity="0.14" stroke="#34d399" stroke-opacity="0.45"/>
+    <text x="66" y="81" fill="#6ee7b7" font-size="13" font-weight="600" text-anchor="middle" letter-spacing="0.5">CLAUDE CODE PLUGIN</text>
+    <text x="0" y="152" fill="#ecfdf5" font-size="62" font-weight="800" letter-spacing="-2">token<tspan fill="#34d399">-</tspan>saver</text>
+    <text x="2" y="194" fill="#a7c9bd" font-size="22">Gasta menos tokens en Claude Code</text>
+    <text x="2" y="224" fill="#a7c9bd" font-size="22">y haz que tu suscripción dure más.</text>
+
+    <g font-size="14" font-weight="600" fill="#d1fae5">
+      <rect x="0" y="252" width="212" height="32" rx="16" fill="#113a2f" stroke="#1f5446"/>
+      <circle cx="18" cy="268" r="4" fill="#34d399"/>
+      <text x="30" y="273">Asesor de modelo y contexto</text>
+      <rect x="222" y="252" width="150" height="32" rx="16" fill="#113a2f" stroke="#1f5446"/>
+      <circle cx="240" cy="268" r="4" fill="#34d399"/>
+      <text x="252" y="273">Salidas compactas</text>
+      <rect x="0" y="292" width="132" height="32" rx="16" fill="#113a2f" stroke="#1f5446"/>
+      <circle cx="18" cy="308" r="4" fill="#34d399"/>
+      <text x="30" y="313">Agente barato</text>
+      <rect x="142" y="292" width="198" height="32" rx="16" fill="#113a2f" stroke="#1f5446"/>
+      <circle cx="160" cy="308" r="4" fill="#34d399"/>
+      <text x="172" y="313">Auditoría de consumo</text>
     </g>
-    <!-- after: clear/compact keeps it low -->
-    <g fill="url(#hot)">
-      <rect x="290" y="-40" width="34" height="40" rx="5"/>
-      <rect x="334" y="-70" width="34" height="70" rx="5"/>
-      <rect x="378" y="-45" width="34" height="45" rx="5"/>
-      <rect x="422" y="-75" width="34" height="75" rx="5"/>
-    </g>
-    <text x="127" y="34" fill="#8b7d72" font-size="16" text-anchor="middle">sin token-saver</text>
-    <text x="373" y="34" fill="#f0a47f" font-size="16" text-anchor="middle">con token-saver</text>
   </g>
 
-  <text x="64" y="128" fill="#f5efe9" font-size="64" font-weight="700" letter-spacing="-1.5">token-saver</text>
-  <text x="66" y="178" fill="#c9bcb1" font-size="24">Gasta menos tokens en Claude Code</text>
-  <text x="66" y="210" fill="#c9bcb1" font-size="24">y haz que tu suscripción dure más.</text>
-  <g font-size="17" fill="#f0a47f">
-    <text x="66" y="276">● asesor de modelo y contexto   ● salidas compactas</text>
-    <text x="66" y="304">● agente barato   ● auditoría de consumo</text>
+  <!-- right: terminal showing the advisor -->
+  <g transform="translate(616 54)">
+    <rect width="536" height="232" rx="14" fill="#04140f" stroke="#1f5446"/>
+    <path d="M0 14a14 14 0 0 1 14-14h508a14 14 0 0 1 14 14v22H0z" fill="#0b2a21"/>
+    <circle cx="22" cy="18" r="5.5" fill="#f87171"/>
+    <circle cx="40" cy="18" r="5.5" fill="#fbbf24"/>
+    <circle cx="58" cy="18" r="5.5" fill="#34d399"/>
+    <text x="268" y="23" fill="#6b8f83" font-size="13" text-anchor="middle">claude · opus</text>
+
+    <g font-family="ui-monospace, 'Cascadia Code', Consolas, Menlo, monospace" font-size="15">
+      <text x="22" y="72" fill="#6ee7b7">&gt;</text>
+      <text x="40" y="72" fill="#ecfdf5">arregla el typo del footer</text>
+
+      <rect x="22" y="94" width="492" height="92" rx="10" fill="#34d399" fill-opacity="0.08" stroke="#34d399" stroke-opacity="0.35"/>
+      <rect x="22" y="94" width="4" height="92" fill="#34d399"/>
+      <text x="40" y="120" fill="#34d399" font-weight="700">token-saver ·<tspan fill="#ecfdf5" font-weight="400"> Tarea ligera → basta con</tspan></text>
+      <text x="40" y="144" fill="#ecfdf5"><tspan fill="#6ee7b7" font-weight="700">Haiku · esfuerzo bajo</tspan>. Estás en Opus:</text>
+      <text x="40" y="168" fill="#ecfdf5">gastarías de más. Cámbialo con <tspan fill="#fbbf24">/model</tspan>.</text>
+
+      <text x="22" y="212" fill="#6b8f83">0 tokens · el aviso no entra en el contexto</text>
+    </g>
   </g>
 </svg>

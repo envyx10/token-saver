@@ -12,7 +12,7 @@
 //                         block stops the message once so you can switch first;
 //                         sending the same message again lets it through.
 //   TOKEN_SAVER_WARN_AT   first context-size warning (default 150000)
-//   TOKEN_SAVER_LANG      es (default) | en
+//   TOKEN_SAVER_LANG      auto (default: replies in the language you write in) | es | en
 
 const fs = require("fs");
 const os = require("os");
@@ -26,9 +26,9 @@ const STEP = 100000;
 const BIG = 40000;          // context worth clearing before a new task
 const IDLE_MIN = 60;        // 1h prompt-cache TTL
 const REPEAT_AFTER = 8;     // prompts before repeating the same model advice
-const LANG = (process.env.TOKEN_SAVER_LANG || "es").toLowerCase().startsWith("en") ? "en" : "es";
+const FORCED_LANG = (process.env.TOKEN_SAVER_LANG || "auto").toLowerCase().slice(0, 2);
 
-const T = {
+const TEXT = {
   es: {
     tier: { light: "ligera", standard: "normal", deep: "compleja" },
     rec: { haiku: "Haiku · esfuerzo bajo", light: "Sonnet · esfuerzo bajo", standard: "Sonnet · esfuerzo medio", deep: "Opus · esfuerzo alto" },
@@ -53,7 +53,27 @@ const T = {
     size: (k) => `Context is at ~${k}k and every message re-processes all of it. New task? /clear. Same one? /compact.`,
     block: "Message held so you can switch first. Send it again unchanged to continue as is.",
   },
-}[LANG];
+};
+
+// Spanish if you write in Spanish, English otherwise. Short or ambiguous
+// prompts ("ok", a code snippet) keep the last language seen in the session,
+// then fall back to the system locale.
+const ES_WORDS = /\b(que|de|el|la|los|las|para|con|por|una|un|es|esto|esta|como|pero|haz|hazme|arregla|quiero|puedes|anade|cambia|mira|tambien|donde|porque|ahora|vale|ya|muy|mas|todo|nuevo|nueva)\b/g;
+const EN_WORDS = /\b(the|to|and|of|is|it|you|for|with|this|that|can|please|fix|add|make|change|what|why|how|now|new|all|should|would|could|my|your)\b/g;
+function detectLang(prompt, prev) {
+  if (FORCED_LANG === "es" || FORCED_LANG === "en") return FORCED_LANG;
+  const p = prompt.toLowerCase();
+  const plain = p.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const es = (plain.match(ES_WORDS) || []).length + (/[ñ¿¡áéíóú]/.test(p) ? 2 : 0);
+  const en = (plain.match(EN_WORDS) || []).length;
+  if (es >= 2 && es > en) return "es";
+  if (en >= 2 && en > es) return "en";
+  if (prev) return prev;
+  let locale = "";
+  try { locale = Intl.DateTimeFormat().resolvedOptions().locale; } catch {}
+  locale = process.env.LC_ALL || process.env.LANG || locale || "";
+  return locale.toLowerCase().startsWith("es") ? "es" : "en";
+}
 
 const RANK = { haiku: 1, sonnet: 2, opus: 3, fable: 3 };
 const REC_RANK = { haiku: 1, light: 2, standard: 2, deep: 3 };
@@ -100,16 +120,20 @@ function lastCall(transcript) {
 
 const family = (model) => (model.match(/haiku|sonnet|opus|fable/i) || [""])[0].toLowerCase();
 // Spanish messages put the tier mid-sentence ("Tarea ligera"); English leads with it.
-const cap = (s) => LANG === "en" ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const upper = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const cap = (s, lang) => lang === "en" ? upper(s) : s;
 const ago = (min) => min >= 120 ? `${Math.round(min / 60)} h` : `${Math.round(min)} min`;
 
 function main(input) {
   if (MODE === "off") return;
   const prompt = String(input.prompt || "");
   const stateFile = path.join(os.tmpdir(), `token-saver-${input.session_id || "nosession"}.json`);
-  let state = { prompts: 0, sizeStep: -1, lastAdvice: "", lastAdviceAt: -99, held: "" };
+  let state = { lang: "", prompts: 0, sizeStep: -1, lastAdvice: "", lastAdviceAt: -99, held: "" };
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, "utf8")) }; } catch {}
   state.prompts++;
+  const lang = detectLang(prompt, state.lang);
+  state.lang = lang;
+  const T = TEXT[lang];
 
   const hash = crypto.createHash("sha1").update(prompt).digest("hex");
   const resent = MODE === "block" && state.held === hash;
@@ -141,11 +165,11 @@ function main(input) {
     const fam = call ? family(call.model) : "";
     const cur = RANK[fam];
     let advice = "";
-    if (!call) advice = T.first(cap(tier), rec);
+    if (!call) advice = T.first(cap(tier, lang), rec);
     else if (!c.confident) advice = "";
     // Downgrading mid-task only pays off while the context is small.
-    else if (cur && cur > REC_RANK[recKey] && ctx < BIG) advice = T.down(cap(tier), rec, cap(fam)) + T.switchHint(ctx);
-    else if (cur && cur < REC_RANK[recKey] && c.tier === "deep") advice = T.up(cap(tier), rec, cap(fam)) + T.switchHint(ctx);
+    else if (cur && cur > REC_RANK[recKey] && ctx < BIG) advice = T.down(cap(tier, lang), rec, upper(fam)) + T.switchHint(ctx);
+    else if (cur && cur < REC_RANK[recKey] && c.tier === "deep") advice = T.up(cap(tier, lang), rec, upper(fam)) + T.switchHint(ctx);
     // Same advice again only after a while, so it doesn't nag.
     const key = `${recKey}|${fam}`;
     if (advice && (key !== state.lastAdvice || state.prompts - state.lastAdviceAt >= REPEAT_AFTER)) {

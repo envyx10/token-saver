@@ -1,54 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" width="800" height="340" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif">
   <style>
-    .bg { fill: #ffffff; } .ink { fill: #1f1b18; } .muted { fill: #6b625b; } .grid { stroke: #e6e0da; }
-    .bar { fill: #c9bcb1; } .hot { fill: #d97757; }
+    .bg { fill: #ffffff; } .ink { fill: #0b2a22; } .muted { fill: #557a6e; } .grid { stroke: #dcefe7; }
+    .bar { fill: #b9e6d3; } .hot { fill: #f87171; } .mark { stroke: #059669; } .marktext { fill: #059669; }
     @media (prefers-color-scheme: dark) {
-      .bg { fill: #0d1117; } .ink { fill: #f0f6fc; } .muted { fill: #9198a1; } .grid { stroke: #30363d; }
-      .bar { fill: #4a4440; }
+      .bg { fill: #0d1117; } .ink { fill: #ecfdf5; } .muted { fill: #8fb5a8; } .grid { stroke: #1a3a31; }
+      .bar { fill: #1f5446; } .hot { fill: #f87171; } .mark { stroke: #34d399; } .marktext { fill: #34d399; }
     }
   </style>
-  <rect class="bg" width="800" height="340" rx="12"/>
-  <text class="ink" x="32" y="40" font-size="18" font-weight="600">Contexto procesado en cada mensaje de una sesión larga</text>
-  <text class="muted" x="32" y="64" font-size="14">Cada barra es lo que se vuelve a procesar al enviar ese mensaje</text>
+  <rect class="bg" width="1200" height="400" rx="16"/>
+  <text class="ink" x="48" y="52" font-size="22" font-weight="700">Contexto procesado en cada mensaje de una sesión larga</text>
+  <text class="muted" x="48" y="80" font-size="15">Cada barra es lo que Claude vuelve a procesar al enviar ese mensaje</text>
 
-  <!-- grid: y=280 is 0, 1k tokens = 0.2px; 900k = 180px -->
+  <!-- y: 320 = 0, 900k = 200px -->
   <g class="grid" stroke-width="1">
-    <line x1="90" y1="280" x2="770" y2="280"/>
-    <line x1="90" y1="220" x2="770" y2="220" stroke-dasharray="4 4"/>
-    <line x1="90" y1="160" x2="770" y2="160" stroke-dasharray="4 4"/>
-    <line x1="90" y1="100" x2="770" y2="100" stroke-dasharray="4 4"/>
+    <line x1="120" y1="320" x2="1152" y2="320"/>
+    <line x1="120" y1="253" x2="1152" y2="253" stroke-dasharray="4 5"/>
+    <line x1="120" y1="187" x2="1152" y2="187" stroke-dasharray="4 5"/>
+    <line x1="120" y1="120" x2="1152" y2="120" stroke-dasharray="4 5"/>
   </g>
-  <g class="muted" font-size="12" text-anchor="end">
-    <text x="80" y="284">0</text>
-    <text x="80" y="224">300k</text>
-    <text x="80" y="164">600k</text>
-    <text x="80" y="104">900k</text>
+  <g class="muted" font-size="13" text-anchor="end">
+    <text x="108" y="324">0</text>
+    <text x="108" y="257">300k</text>
+    <text x="108" y="191">600k</text>
+    <text x="108" y="124">900k</text>
   </g>
 
-  <!-- bars: 20k, 60k, 120k, 250k, 480k, 850k -->
-  <g>
-    <rect class="bar" x="120" y="276" width="70" height="4" rx="3"/>
-    <rect class="bar" x="230" y="268" width="70" height="12" rx="3"/>
-    <rect class="bar" x="340" y="256" width="70" height="24" rx="3"/>
-    <rect class="bar" x="450" y="230" width="70" height="50" rx="3"/>
-    <rect class="hot" x="560" y="184" width="70" height="96" rx="3"/>
-    <rect class="hot" x="670" y="110" width="70" height="170" rx="3"/>
+  <!-- 150k threshold: the advisor's first warning -->
+  <line class="mark" x1="120" y1="287" x2="1152" y2="287" stroke-width="2" stroke-dasharray="8 6"/>
+  <text class="marktext" x="1150" y="279" font-size="13" font-weight="700" text-anchor="end">150k · primer aviso de token-saver</text>
+
+  <!-- bars: 20k, 60k, 120k, 250k, 480k, 850k → height = k * 200/900 -->
+  <rect class="bar" x="160" y="316" width="110" height="4" rx="4"/>
+  <rect class="bar" x="330" y="307" width="110" height="13" rx="4"/>
+  <rect class="bar" x="500" y="293" width="110" height="27" rx="4"/>
+  <rect class="hot" x="670" y="264" width="110" height="56" rx="4" fill-opacity="0.7"/>
+  <rect class="hot" x="840" y="213" width="110" height="107" rx="4" fill-opacity="0.85"/>
+  <rect class="hot" x="1010" y="131" width="110" height="189" rx="4"/>
+
+  <g class="ink" font-size="15" font-weight="700" text-anchor="middle">
+    <text x="215" y="306">20k</text>
+    <text x="385" y="297">60k</text>
+    <text x="555" y="283">120k</text>
+    <text x="725" y="254">250k</text>
+    <text x="895" y="203">480k</text>
+    <text x="1065" y="121">850k</text>
   </g>
-  <g class="ink" font-size="13" font-weight="600" text-anchor="middle">
-    <text x="155" y="268">20k</text>
-    <text x="265" y="260">60k</text>
-    <text x="375" y="248">120k</text>
-    <text x="485" y="222">250k</text>
-    <text x="595" y="176">480k</text>
-    <text x="705" y="102">850k</text>
+  <g class="muted" font-size="14" text-anchor="middle">
+    <text x="215" y="348">mensaje 1</text>
+    <text x="385" y="348">5</text>
+    <text x="555" y="348">10</text>
+    <text x="725" y="348">20</text>
+    <text x="895" y="348">40</text>
+    <text x="1065" y="348">80</text>
   </g>
-  <g class="muted" font-size="13" text-anchor="middle">
-    <text x="155" y="304">mensaje 1</text>
-    <text x="265" y="304">5</text>
-    <text x="375" y="304">10</text>
-    <text x="485" y="304">20</text>
-    <text x="595" y="304">40</text>
-    <text x="705" y="304">80</text>
-  </g>
-  <text class="muted" x="650" y="328" font-size="12" text-anchor="middle">aquí token-saver ya te habría avisado</text>
+  <text class="muted" x="600" y="384" font-size="13" text-anchor="middle">En rojo, lo que se paga de más por no hacer /clear o /compact a tiempo</text>
 </svg>

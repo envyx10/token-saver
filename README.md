@@ -55,7 +55,7 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 
 | | Pieza | Tipo | Qué hace | Coste en tokens |
 |---|---|---|---|---|
-| 🧭 | **Asesor** | Hook `UserPromptSubmit` | Clasifica tu mensaje (ligera, normal, compleja) y te dice qué **modelo y esfuerzo** encajan si el que usas no lo hace. Te dice cuándo hacer **`/clear`** (tarea nueva) o **`/compact`** (contexto grande, caché caducado). | **0**: clasifica en local y el aviso lo ves tú, no entra en el contexto |
+| 🧭 | **Asesor** | Hook `UserPromptSubmit` | Clasifica tu mensaje (ligera, normal, compleja) y te dice qué **modelo y esfuerzo** pide: siempre al empezar una tarea, y a mitad de tarea si el que usas no encaja. Te dice cuándo hacer **`/clear`** (tarea nueva) o **`/compact`** (contexto grande, caché caducado). | **0** en la terminal: clasifica en local y el aviso lo ves tú, no entra en el contexto. En la app de escritorio, ~80 tokens por aviso |
 | ✂️ | **Salidas compactas** | Hook `PostToolUse` | Si un comando Bash imprime más de 6000 caracteres, Claude recibe el principio, las líneas de error/warning y el final. La salida completa queda en un fichero temporal. | **Ahorra** (en la prueba, ~90 %) |
 | ✍️ | **Prompter** | Skill + Asesor | Si una tarea empieza con un prompt vago («mejora la web», «haz que funcione»), Claude te hace 1–3 preguntas y arma un prompt completo **antes** de tocar nada. | ~60 tokens del aviso, frente a una tarea hecha a ciegas |
 | 🔭 | **Agente `scout`** | Subagente (Haiku) | Explorador de solo lectura: busca en el código y devuelve solo la conclusión con `ruta:línea`. | Mucho más barato que Opus |
@@ -97,7 +97,7 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
  Full output: …/token-saver-….log]
 ```
 
-Los comandos con los que Claude pide una salida concreta a propósito **no se tocan nunca**: `cat`, `sed`, `head`, `tail`, `grep`, `rg`, `awk`, `jq`, `git diff`, `git show`, `git blame`. Para saltarte el recorte en cualquier otro comando, añade `# full` al final.
+Los comandos con los que Claude pide una salida concreta a propósito **no se tocan nunca**: `cat`, `sed`, `head`, `tail`, `less`, `type`, `Get-Content`, `grep`, `rg`, `awk`, `jq`, `git diff`, `git show`, `git blame`. Para saltarte el recorte en cualquier otro comando, añade `# full` al final.
 
 ---
 
@@ -233,7 +233,7 @@ Usa el agente scout para encontrar dónde se valida el token de sesión
 
 ### 🧭 Asesor
 
-No hay que hacer nada: al enviar un mensaje, el asesor lo clasifica en local y, si hace falta, te muestra un aviso. Si no hay nada que mejorar, no dice nada.
+No hay que hacer nada: al enviar un mensaje, el asesor lo clasifica en local y te muestra un aviso: al empezar una tarea siempre te dice qué modelo y esfuerzo pide (aunque el tuyo ya encaje), y después solo habla cuando hay algo que mejorar.
 
 **Qué modelo y esfuerzo recomienda**
 
@@ -260,7 +260,7 @@ Cada aviso tiene tres partes: **qué pasa**, **por qué importa** y 👉 **qué 
 |---|---|---|
 | 🟢🟡🔴 | **Empiezas una tarea** (primer mensaje, cambio de tarea o tras `/clear`) | Qué modelo y esfuerzo pide la tarea, y si el tuyo encaja |
 | 🟢🟡🔴 | **A mitad de tarea, el modelo no encaja** (Opus para un typo, Sonnet para una migración) | El modelo adecuado y cuándo cambiar: ya con `/model` si el contexto es pequeño, o tras `/clear` si es grande |
-| 🆕 | **Cambias de tarea** con más de 40k de contexto | Que hagas `/clear` antes de empezar |
+| 🆕 | **Cambias de tarea** con más de 40k de contexto | Si es un tema distinto: `Esc`, `/clear` y reenvía el mensaje. Si sigues con lo mismo, no hagas nada. En modo `warn` Claude ya ha empezado, por eso el `Esc` |
 | ⏰ | **Vuelves tras más de 1 h** | Que el caché ha caducado y el mensaje se cobra entero |
 | 🧹 | **El contexto pasa de 150k** (y cada 100k más) | `/clear` si es otra tarea, `/compact` si es la misma |
 | ✍️ | **Empiezas con un prompt vago** | Que Claude va a afinarlo con el prompter |
@@ -279,7 +279,7 @@ Cada aviso tiene tres partes: **qué pasa**, **por qué importa** y 👉 **qué 
 - No repite el mismo consejo hasta pasados 8 mensajes.
 - El texto que pegas o citas no cuenta como «cambio de tarea».
 
-**Modo `block`**: con `TOKEN_SAVER_ADVISOR=block`, el asesor detiene el mensaje la primera vez para que cambies de modelo o hagas `/clear` **antes** de que Claude empiece. Si reenvías el mismo mensaje, pasa sin más.
+**Modo `block`**: con `TOKEN_SAVER_ADVISOR=block`, el asesor detiene el mensaje para que cambies de modelo o hagas `/clear` **antes** de que Claude empiece. Solo lo hace a mitad de tarea cuando el modelo no encaja, o al cambiar de tarea con más de 40k de contexto; al empezar con el contexto vacío o con un prompt vago (que va al prompter) no detiene nada. Si reenvías el mismo mensaje, pasa sin más.
 
 | Situación | Qué hacer |
 |---|---|
@@ -305,7 +305,7 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 
 | Variable | Por defecto | Qué controla |
 |---|---|---|
-| `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez para que cambies antes, `off` desactiva el asesor |
+| `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez (solo si hay un cambio de modelo o un `/clear` que hacer) para que cambies antes, `off` desactiva el asesor |
 | `TOKEN_SAVER_RELAY` | `auto` | Si Claude repite el aviso al principio de su respuesta. `auto`: solo en la app de escritorio. `on`: siempre. `off`: nunca (0 tokens) |
 | `TOKEN_SAVER_PROMPTER` | `auto` | `off` desactiva el prompter automático. Para saltarlo una vez, añade `#go` al mensaje |
 | `TOKEN_SAVER_LANG` | `auto` | Idioma de los avisos. `auto` responde en el idioma en que escribes (español o inglés). `es` o `en` lo fijan |

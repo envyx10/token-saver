@@ -1,0 +1,16 @@
+{
+  "name": "pgdiaz-tools",
+  "owner": {
+    "name": "envyx10"
+  },
+  "metadata": {
+    "description": "Personal Claude Code tools."
+  },
+  "plugins": [
+    {
+      "name": "token-saver",
+      "source": "./plugins/token-saver",
+      "description": "Spend fewer tokens in Claude Code."
+    }
+  ]
+}

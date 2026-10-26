@@ -36,7 +36,7 @@
   <text x="66" y="178" fill="#c9bcb1" font-size="24">Gasta menos tokens en Claude Code</text>
   <text x="66" y="210" fill="#c9bcb1" font-size="24">y haz que tu suscripción dure más.</text>
   <g font-size="17" fill="#f0a47f">
-    <text x="66" y="276">● avisos de contexto   ● salidas compactas</text>
+    <text x="66" y="276">● asesor de modelo y contexto   ● salidas compactas</text>
     <text x="66" y="304">● agente barato   ● auditoría de consumo</text>
   </g>
 </svg>

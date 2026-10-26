@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <b>Un plugin de Claude Code que te avisa cuando una sesión se vuelve cara, recorta las salidas ruidosas de la terminal,<br>
-  delega búsquedas a un modelo barato y te enseña con tus propios datos dónde se van los tokens.</b>
+  <b>Un plugin de Claude Code que, antes de cada tarea, te dice qué modelo y esfuerzo necesita y cuándo hacer <code>/clear</code> o <code>/compact</code>,<br>
+  recorta las salidas ruidosas de la terminal, delega búsquedas a un modelo barato y te enseña con tus propios datos dónde se van los tokens.</b>
 </p>
 
 ---
@@ -47,7 +47,7 @@ Al medir 30 días de uso real con la auditoría de este plugin salió esto:
 | Salida media de un comando Bash | ~500 tokens |
 | Uso que fue a Opus | 87 % |
 
-La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más que cualquier comando concreto. Por eso la pieza central de token-saver es el aviso de contexto. Las demás piezas atacan las fugas secundarias.
+La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más que cualquier comando concreto. Le sigue el modelo: usar Opus para un typo o un commit es pagar de más. Por eso la pieza central de token-saver es el **asesor**, que te avisa de las dos cosas antes de que Claude empiece. Las demás piezas atacan las fugas secundarias.
 
 ---
 
@@ -55,7 +55,7 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 
 | | Pieza | Tipo | Qué hace | Coste en tokens |
 |---|---|---|---|---|
-| 🚨 | **Aviso de contexto** | Hook `UserPromptSubmit` | Cuando el contexto pasa de 150k, te avisa (una vez por cada 100k más) para que hagas `/clear` o `/compact`. | **0**: el aviso lo ves tú, no entra en el contexto |
+| 🧭 | **Asesor** | Hook `UserPromptSubmit` | Clasifica tu mensaje (ligera, normal, compleja) y te dice qué **modelo y esfuerzo** encajan si el que usas no lo hace. Te dice cuándo hacer **`/clear`** (tarea nueva) o **`/compact`** (contexto grande, caché caducado). | **0**: clasifica en local y el aviso lo ves tú, no entra en el contexto |
 | ✂️ | **Salidas compactas** | Hook `PostToolUse` | Si un comando Bash imprime más de 6000 caracteres, Claude recibe el principio, las líneas de error/warning y el final. La salida completa queda en un fichero temporal. | **Ahorra** (en la prueba, ~90 %) |
 | 🔭 | **Agente `scout`** | Subagente (Haiku) | Explorador de solo lectura: busca en el código y devuelve solo la conclusión con `ruta:línea`. | Mucho más barato que Opus |
 | 📊 | **`/token-saver:audit`** | Skill | Analiza tus transcripciones locales y genera un informe: sesiones más caras, reparto por modelo, herramientas y comandos que más ocupan. | Solo el informe |
@@ -66,9 +66,11 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 
 ```mermaid
 flowchart TD
-    U([Tú escribes un mensaje]) --> G{"🚨 ¿contexto > 150k?"}
-    G -- sí --> W["Aviso para ti:<br/>/clear o /compact"]
-    G -- no --> C
+    U([Tú escribes un mensaje]) --> A["🧭 Asesor<br/>clasifica la tarea y mira el contexto"]
+    A -- "modelo no encaja" --> M["Aviso: modelo y esfuerzo recomendados"]
+    A -- "tarea nueva o contexto grande" --> W["Aviso: /clear o /compact"]
+    A -- "todo bien" --> C
+    M --> C
     W --> C[Claude trabaja]
     C -- "búsqueda amplia" --> S["🔭 scout en Haiku<br/>devuelve solo la conclusión"]
     C -- "ejecuta Bash" --> K{"✂️ ¿salida > 6000 caracteres?"}
@@ -215,19 +217,43 @@ Claude lo usa solo cuando le encaja la tarea, pero puedes pedírselo directament
 Usa el agente scout para encontrar dónde se valida el token de sesión
 ```
 
-### 🚨 Aviso de contexto
+### 🧭 Asesor
 
-No hay que hacer nada. Cuando aparezca este mensaje, decide:
+No hay que hacer nada: al enviar un mensaje, el asesor lo clasifica en local y, si hace falta, te muestra un aviso. Si no hay nada que mejorar, no dice nada.
 
-```text
-token-saver: context is ~320k tokens and every message re-processes all of it. New task? /clear. Same task? /compact.
-```
+**Qué modelo y esfuerzo recomienda**
+
+| Tarea | Ejemplos | Recomendación |
+|---|---|---|
+| 🟢 Ligera | typo, renombrar, commit/push, traducir, «¿qué hace X?» | Haiku o Sonnet · esfuerzo bajo |
+| 🟡 Normal | implementar un endpoint, arreglar un bug, un componente, tests | Sonnet · esfuerzo medio |
+| 🔴 Compleja | arquitectura, refactor, migración, seguridad, rendimiento, bugs intermitentes | Opus · esfuerzo alto |
+
+**Los avisos que verás**
+
+| Situación | Aviso |
+|---|---|
+| Primer mensaje de la sesión | `Tarea compleja → recomendado: Opus · esfuerzo alto. Es el mejor momento para elegir: el contexto está vacío.` |
+| Opus para algo ligero | `Tarea ligera → basta con Haiku · esfuerzo bajo. Estás en Opus: gastarías de más. Cámbialo con /model.` |
+| Sonnet para algo complejo | `Tarea compleja → mejor Opus · esfuerzo alto. Estás en Sonnet: puede quedarse corto.` |
+| Empiezas otra tarea con >40k de contexto | `Parece una tarea nueva y arrastras ~80k de contexto… /clear antes de empezar.` |
+| Vuelves tras más de 1 h | `2 h sin actividad: el caché ha caducado y este mensaje re-procesa ~80k a precio completo.` |
+| El contexto pasa de 150k (y cada 100k más) | `El contexto va por ~200k… ¿Otra tarea? /clear. ¿La misma? /compact.` |
+
+**Reglas para que no sea pesado**
+
+- Los seguimientos cortos («sí», «dale», «hazlo ya», «continúa») y los comandos `/…` no se analizan nunca.
+- A mitad de sesión solo opina si el mensaje tiene señales claras. Sin ellas, se calla.
+- Solo propone bajar de modelo con menos de 40k de contexto. Con más, cambiar obliga a re-procesarlo todo y el ahorro se pierde, así que te sugiere hacerlo tras un `/clear`.
+- No repite el mismo consejo hasta pasados 8 mensajes.
+
+**Modo `block`**: con `TOKEN_SAVER_ADVISOR=block`, el asesor detiene el mensaje la primera vez para que cambies de modelo o hagas `/clear` **antes** de que Claude empiece. Si reenvías el mismo mensaje, pasa sin más.
 
 | Situación | Qué hacer |
 |---|---|
 | Vas a empezar otra tarea | `/clear` |
 | Sigues con la misma tarea | `/compact` |
-| Necesitas todo el historial | Sigue. El aviso no vuelve hasta 100k más |
+| Necesitas todo el historial | Sigue. El aviso de tamaño no vuelve hasta 100k más |
 
 ---
 
@@ -238,6 +264,7 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 ```json
 {
   "env": {
+    "TOKEN_SAVER_ADVISOR": "block",
     "TOKEN_SAVER_WARN_AT": "120000",
     "TOKEN_SAVER_MAX_CHARS": "8000"
   }
@@ -246,7 +273,9 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 
 | Variable | Por defecto | Qué controla |
 |---|---|---|
-| `TOKEN_SAVER_WARN_AT` | `150000` | Tokens de contexto a partir de los que llega el primer aviso |
+| `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez para que cambies antes, `off` desactiva el asesor |
+| `TOKEN_SAVER_LANG` | `es` | Idioma de los avisos: `es` o `en` |
+| `TOKEN_SAVER_WARN_AT` | `150000` | Tokens de contexto a partir de los que llega el primer aviso de tamaño |
 | `TOKEN_SAVER_MAX_CHARS` | `6000` | Caracteres de salida de Bash a partir de los que se compacta |
 | `TOKEN_SAVER_COMPACT` | `1` | Pon `0` para desactivar la compactación |
 
@@ -282,7 +311,8 @@ token-saver/
     ├── hooks/
     │   └── hooks.json           # registra los dos hooks
     ├── scripts/
-    │   ├── context-guard.js     # 🚨 aviso de contexto
+    │   ├── advisor.js           # 🧭 asesor de modelo, esfuerzo y contexto
+    │   ├── classify.js          # 🧭 clasificador local de tareas
     │   ├── compact-output.js    # ✂️ salidas compactas
     │   └── audit.js             # 📊 auditoría
     ├── agents/
@@ -297,10 +327,12 @@ Sin dependencias: solo Node y su librería estándar.
 
 ## Limitaciones
 
-- **El formato de las transcripciones de Claude Code es interno** y puede cambiar entre versiones. Si la auditoría o el aviso de contexto dejan de funcionar tras una actualización, probablemente sea por eso.
+- **El formato de las transcripciones de Claude Code es interno** y puede cambiar entre versiones. Si la auditoría o el asesor dejan de funcionar tras una actualización, probablemente sea por eso.
+- **El clasificador usa palabras clave** (español e inglés) y la longitud del mensaje, no un modelo: es instantáneo y gratis, pero puede equivocarse. Tómalo como una sugerencia.
+- **Claude Code no le dice al hook qué esfuerzo tienes puesto.** El modelo se lee de la transcripción, pero el esfuerzo no: el asesor lo recomienda sin poder compararlo con el tuyo.
 - La auditoría estima los tokens de las salidas de herramientas a razón de ~4 caracteres por token. Los totales de contexto y de salida, en cambio, son los que registra Claude Code.
 - La compactación usa heurísticas: si alguna vez se pierde una línea importante, Claude puede leer la salida completa desde el fichero temporal, y tú puedes añadir `# full` al comando.
-- Los avisos y notas del plugin están en inglés.
+- Los avisos del asesor salen en español (o en inglés con `TOKEN_SAVER_LANG=en`). La nota de compactación va en inglés porque la lee Claude, no tú.
 
 ---
 

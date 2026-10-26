@@ -57,6 +57,7 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 |---|---|---|---|---|
 | 🧭 | **Asesor** | Hook `UserPromptSubmit` | Clasifica tu mensaje (ligera, normal, compleja) y te dice qué **modelo y esfuerzo** encajan si el que usas no lo hace. Te dice cuándo hacer **`/clear`** (tarea nueva) o **`/compact`** (contexto grande, caché caducado). | **0**: clasifica en local y el aviso lo ves tú, no entra en el contexto |
 | ✂️ | **Salidas compactas** | Hook `PostToolUse` | Si un comando Bash imprime más de 6000 caracteres, Claude recibe el principio, las líneas de error/warning y el final. La salida completa queda en un fichero temporal. | **Ahorra** (en la prueba, ~90 %) |
+| ✍️ | **Prompter** | Skill + Asesor | Si una tarea empieza con un prompt vago («mejora la web», «haz que funcione»), Claude te hace 1–3 preguntas y arma un prompt completo **antes** de tocar nada. | ~60 tokens del aviso, frente a una tarea hecha a ciegas |
 | 🔭 | **Agente `scout`** | Subagente (Haiku) | Explorador de solo lectura: busca en el código y devuelve solo la conclusión con `ruta:línea`. | Mucho más barato que Opus |
 | 📊 | **`/token-saver:audit`** | Skill | Analiza tus transcripciones locales y genera un informe: sesiones más caras, reparto por modelo, herramientas y comandos que más ocupan. | Solo el informe |
 
@@ -199,6 +200,29 @@ El script lee los ficheros en disco y solo el informe entra en la conversación,
 node plugins/token-saver/scripts/audit.js --days 30
 ```
 
+### ✍️ Prompter
+
+Se activa solo cuando **empiezas una tarea** (primer mensaje o cambio de tarea) con un prompt vago. Mide lo mismo que mirarías tú: si el mensaje es corto, si no nombra nada concreto (ficheros, funciones, errores, URLs, código, imágenes), si usa palabras vagas y si la tarea es grande.
+
+| Prompt | ¿Se activa? |
+|---|---|
+| `mejora la web` | ✍️ Sí |
+| `refactoriza el backend` | ✍️ Sí |
+| `haz que funcione` | ✍️ Sí |
+| `refactoriza src/auth/session.ts para usar el nuevo cliente de Supabase` | No: es concreto |
+| `el botón de pagar da TypeError: cannot read 'id' of undefined` | No: trae el error |
+| `arregla el typo del footer`, `haz commit` | No: tarea ligera |
+| `¿qué hace esta función?` | No: es una pregunta |
+| `mejora la web #go` | No: `#go` lo salta |
+
+Cuando se activa, Claude:
+
+1. Echa un vistazo rápido al proyecto (máximo 3 lecturas) para que las preguntas tengan sentido.
+2. Te hace 1–3 preguntas con opciones: objetivo, alcance y cómo saber que está hecho.
+3. Te enseña el prompt afinado (*Objetivo · Contexto · Restricciones · Hecho cuando*) y empieza cuando confirmas.
+
+También puedes llamarlo a mano: `/token-saver:prompter mejora el onboarding`.
+
 ### 🔭 Agente scout
 
 Claude lo usa solo cuando le encaja la tarea, pero puedes pedírselo directamente:
@@ -266,6 +290,7 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 | Variable | Por defecto | Qué controla |
 |---|---|---|
 | `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez para que cambies antes, `off` desactiva el asesor |
+| `TOKEN_SAVER_PROMPTER` | `auto` | `off` desactiva el prompter automático. Para saltarlo una vez, añade `#go` al mensaje |
 | `TOKEN_SAVER_LANG` | `auto` | Idioma de los avisos. `auto` responde en el idioma en que escribes (español o inglés). `es` o `en` lo fijan |
 | `TOKEN_SAVER_WARN_AT` | `150000` | Tokens de contexto a partir de los que llega el primer aviso de tamaño |
 | `TOKEN_SAVER_MAX_CHARS` | `6000` | Caracteres de salida de Bash a partir de los que se compacta |
@@ -306,12 +331,14 @@ token-saver/
     ├── scripts/
     │   ├── advisor.js           # 🧭 asesor de modelo, esfuerzo y contexto
     │   ├── classify.js          # 🧭 clasificador local de tareas
+    │   ├── vague.js             # ✍️ detector de prompts vagos
     │   ├── compact-output.js    # ✂️ salidas compactas
     │   └── audit.js             # 📊 auditoría
     ├── agents/
     │   └── scout.md             # 🔭 agente Haiku
-    └── skills/audit/
-        └── SKILL.md             # /token-saver:audit
+    └── skills/
+        ├── audit/SKILL.md       # 📊 /token-saver:audit
+        └── prompter/SKILL.md    # ✍️ /token-saver:prompter
 ```
 
 Sin dependencias: solo Node y su librería estándar.

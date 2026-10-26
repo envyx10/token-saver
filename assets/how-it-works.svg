@@ -46,28 +46,36 @@
   <text class="ink" x="444" y="151" font-size="22" font-weight="700">Asesor</text>
   <text class="muted" x="350" y="188" font-size="16">Clasifica la tarea en local y mira el tamaño del contexto</text>
 
-  <!-- branches to 3 outcomes -->
-  <path class="wire" d="M600 212 V236 H230 V262" marker-end="url(#arrow)"/>
-  <path class="wire" d="M600 236 V262" marker-end="url(#arrow)"/>
-  <path class="wire" d="M600 236 H970 V262" marker-end="url(#arrow)"/>
+  <!-- branches to 4 outcomes -->
+  <path class="wire" d="M600 212 V236 H187 V262" marker-end="url(#arrow)"/>
+  <path class="wire" d="M600 236 H1012 V262" marker-end="url(#arrow)"/>
+  <path class="wire" d="M462 236 V262" marker-end="url(#arrow)"/>
+  <path class="wire" d="M737 236 V262" marker-end="url(#arrow)"/>
 
-  <rect class="warn" x="60" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
-  <text class="amber" x="84" y="296" font-size="12" font-weight="700" letter-spacing="1">EL MODELO NO ENCAJA</text>
-  <text class="ink" x="84" y="326" font-size="17" font-weight="600">Aviso: modelo y esfuerzo</text>
-  <text class="muted" x="84" y="350" font-size="14">«Tarea ligera → basta con Haiku»</text>
+  <rect class="warn" x="60" y="266" width="255" height="104" rx="14" stroke-width="1.5"/>
+  <text class="amber" x="80" y="296" font-size="12" font-weight="700" letter-spacing="1">EL MODELO NO ENCAJA</text>
+  <text class="ink" x="80" y="326" font-size="16" font-weight="600">Aviso: modelo y esfuerzo</text>
+  <text class="muted" x="80" y="350" font-size="14">«Basta con Haiku»</text>
 
-  <rect class="warn" x="430" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
-  <text class="amber" x="454" y="296" font-size="12" font-weight="700" letter-spacing="1">TAREA NUEVA O CONTEXTO GRANDE</text>
-  <text class="ink" x="454" y="326" font-size="17" font-weight="600">Aviso: /clear o /compact</text>
-  <text class="muted" x="454" y="350" font-size="14">También si el caché ha caducado</text>
+  <rect class="warn" x="335" y="266" width="255" height="104" rx="14" stroke-width="1.5"/>
+  <text class="amber" x="355" y="296" font-size="12" font-weight="700" letter-spacing="1">CONTEXTO GRANDE</text>
+  <text class="ink" x="355" y="326" font-size="16" font-weight="600">Aviso: /clear o /compact</text>
+  <text class="muted" x="355" y="350" font-size="14">Tarea nueva o caché caducado</text>
 
-  <rect class="ok" x="800" y="266" width="340" height="104" rx="14" stroke-width="1.5"/>
-  <text class="accent" x="824" y="296" font-size="12" font-weight="700" letter-spacing="1">TODO ENCAJA</text>
-  <text class="ink" x="824" y="326" font-size="17" font-weight="600">Sin aviso</text>
-  <text class="muted" x="824" y="350" font-size="14">El asesor no dice nada</text>
+  <rect class="hero" x="610" y="266" width="255" height="104" rx="14" stroke-width="1.5"/>
+  <text class="accent" x="630" y="296" font-size="12" font-weight="700" letter-spacing="1">PROMPT VAGO</text>
+  <text class="ink" x="630" y="326" font-size="16" font-weight="600">Claude afina el prompt</text>
+  <text class="muted" x="630" y="350" font-size="14">Te pregunta antes de empezar</text>
+
+  <rect class="ok" x="885" y="266" width="255" height="104" rx="14" stroke-width="1.5"/>
+  <text class="accent" x="905" y="296" font-size="12" font-weight="700" letter-spacing="1">TODO ENCAJA</text>
+  <text class="ink" x="905" y="326" font-size="16" font-weight="600">Sin aviso</text>
+  <text class="muted" x="905" y="350" font-size="14">El asesor no dice nada</text>
 
   <!-- merge into Claude -->
-  <path class="wire" d="M230 370 V396 H970 V370"/>
+  <path class="wire" d="M187 370 V396 H1012 V370"/>
+  <path class="wire" d="M462 370 V396"/>
+  <path class="wire" d="M737 370 V396"/>
   <path class="wire" d="M600 370 V420" marker-end="url(#arrow)"/>
 
   <!-- 3. Claude -->

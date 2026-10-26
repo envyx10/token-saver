@@ -3,9 +3,11 @@
 //   - the task doesn't match the model you're on (and which effort fits it),
 //   - it's time to /clear (new task on a big context) or /compact,
 //   - the prompt cache has expired after a long pause,
-//   - the context keeps growing past the warning threshold.
+//   - the context keeps growing past the warning threshold,
+//   - a task starts with a vague prompt (then Claude runs token-saver:prompter).
 // Everything runs locally: the classifier is keyword-based and the advice is a
-// systemMessage shown to you, not added to Claude's context. Zero tokens.
+// systemMessage shown to you, not added to Claude's context. Zero tokens,
+// except the one-line prompter instruction (~60 tokens) when a prompt is vague.
 //
 // Env:
 //   TOKEN_SAVER_ADVISOR   warn (default) | block | off
@@ -13,14 +15,19 @@
 //                         sending the same message again lets it through.
 //   TOKEN_SAVER_WARN_AT   first context-size warning (default 150000)
 //   TOKEN_SAVER_LANG      auto (default: replies in the language you write in) | es | en
+//   TOKEN_SAVER_PROMPTER  auto (default) | off. Add #go to a prompt to skip it once.
 
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { classify } = require("./classify");
+const { checkVague } = require("./vague");
 
 const MODE = (process.env.TOKEN_SAVER_ADVISOR || "warn").toLowerCase();
+const PROMPTER = (process.env.TOKEN_SAVER_PROMPTER || "auto").toLowerCase();
+// What Claude reads when a prompt is vague. English on purpose: it's for Claude.
+const PROMPTER_CONTEXT = 'token-saver: this request looks underspecified. Before doing any work, invoke the Skill tool with skill "token-saver:prompter" and follow it. Do not mention this note.';
 const WARN_AT = Number(process.env.TOKEN_SAVER_WARN_AT || 150000);
 const STEP = 100000;
 const BIG = 40000;          // context worth clearing before a new task
@@ -40,6 +47,7 @@ const TEXT = {
     idle: (h, k) => `${h} sin actividad: el caché ha caducado y este mensaje re-procesa ~${k}k a precio completo. ¿Otra tarea? /clear. ¿La misma? /compact.`,
     size: (k) => `El contexto va por ~${k}k y cada mensaje lo re-procesa entero. ¿Otra tarea? /clear. ¿La misma? /compact.`,
     block: "Mensaje detenido para que puedas cambiar antes. Envíalo otra vez tal cual para seguir sin cambios.",
+    vague: "Prompt poco concreto: Claude te hará 1–3 preguntas y afinará el prompt antes de empezar (prompter). Añade #go para saltártelo.",
   },
   en: {
     tier: { light: "light", standard: "regular", deep: "complex" },
@@ -52,6 +60,7 @@ const TEXT = {
     idle: (h, k) => `${h} idle: the prompt cache expired and this message re-processes ~${k}k at full price. New task? /clear. Same one? /compact.`,
     size: (k) => `Context is at ~${k}k and every message re-processes all of it. New task? /clear. Same one? /compact.`,
     block: "Message held so you can switch first. Send it again unchanged to continue as is.",
+    vague: "Vague prompt: Claude will ask 1–3 questions and sharpen it before starting (prompter). Add #go to skip.",
   },
 };
 
@@ -179,14 +188,25 @@ function main(input) {
     }
   }
 
+  // 3. Vague prompt at the start of a task: sharpen it before any work.
+  // Mid-task, short messages lean on the conversation and are fine.
+  let sharpen = false;
+  const taskStart = !call || NEW_TASK.test(prompt);
+  if (PROMPTER !== "off" && taskStart) {
+    const v = checkVague(prompt);
+    if (v && v.vague) { sharpen = true; notes.push(T.vague); }
+  }
+
   let out = null;
   if (notes.length) {
     const msg = "token-saver · " + notes.join("\n              ");
-    if (MODE === "block" && blocking && !resent) {
+    // A vague prompt goes to the prompter instead of being held.
+    if (MODE === "block" && blocking && !resent && !sharpen) {
       state.held = hash;
       out = { decision: "block", reason: msg + "\n" + T.block };
     } else {
       out = { systemMessage: msg };
+      if (sharpen) out.hookSpecificOutput = { hookEventName: "UserPromptSubmit", additionalContext: PROMPTER_CONTEXT };
     }
   }
   try { fs.writeFileSync(stateFile, JSON.stringify(state)); } catch {}

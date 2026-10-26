@@ -27,7 +27,7 @@
 
   <!-- 150k threshold: the advisor's first warning -->
   <line class="mark" x1="120" y1="287" x2="1152" y2="287" stroke-width="2" stroke-dasharray="8 6"/>
-  <text class="marktext" x="1150" y="279" font-size="13" font-weight="700" text-anchor="end">150k · primer aviso de token-saver</text>
+  <text class="marktext" x="128" y="279" font-size="13" font-weight="700">150k · primer aviso de token-saver</text>
 
   <!-- bars: 20k, 60k, 120k, 250k, 480k, 850k → height = k * 200/900 -->
   <rect class="bar" x="160" y="316" width="110" height="4" rx="4"/>

@@ -34,13 +34,9 @@
 
 En Claude Code, **cada mensaje vuelve a procesar toda la conversación**: tus mensajes, las respuestas, cada fichero leído y cada salida de terminal. Una sesión no cuesta lo que dice su último mensaje, sino la suma del contexto en cada turno.
 
-```mermaid
-xychart-beta
-    title "Contexto procesado por cada mensaje en una sesión larga"
-    x-axis "Mensaje" [1, 5, 10, 20, 40, 80]
-    y-axis "Tokens de contexto (miles)" 0 --> 900
-    bar [20, 60, 120, 250, 480, 850]
-```
+<p align="center">
+  <img src="assets/context-growth.svg" alt="El contexto crece en cada mensaje: 20k en el primero, 850k en el 80" width="100%">
+</p>
 
 Al medir 30 días de uso real con la auditoría de este plugin salió esto:
 
@@ -69,26 +65,20 @@ La conclusión: **lo que más gasta es la longitud de las sesiones**, mucho más
 ## Cómo funciona
 
 ```mermaid
-flowchart LR
-    U([Tú escribes un mensaje]) --> G{"🚨 context-guard<br/>¿contexto > 150k?"}
-    G -- sí --> W["Aviso visible para ti<br/>/clear o /compact"]
+flowchart TD
+    U([Tú escribes un mensaje]) --> G{"🚨 ¿contexto > 150k?"}
+    G -- sí --> W["Aviso para ti:<br/>/clear o /compact"]
     G -- no --> C
     W --> C[Claude trabaja]
-    C -- "busca en el código" --> S["🔭 scout (Haiku)<br/>devuelve solo la conclusión"]
-    C -- "ejecuta Bash" --> B[Comando]
-    B --> K{"✂️ compact-output<br/>¿> 6000 caracteres?"}
-    K -- sí --> R["Principio + errores + final<br/>+ ruta a la salida completa"]
+    C -- "búsqueda amplia" --> S["🔭 scout en Haiku<br/>devuelve solo la conclusión"]
+    C -- "ejecuta Bash" --> K{"✂️ ¿salida > 6000 caracteres?"}
+    K -- sí --> R["Principio + errores + final"]
     K -- no --> O[Salida tal cual]
-    R --> C
-    O --> C
-    S --> C
 ```
 
 ### ✂️ Así queda una salida compactada
 
-<table>
-<tr><th>Antes: 800 líneas, ~29 500 caracteres</th><th>Después: ~3 300 caracteres</th></tr>
-<tr><td>
+**Antes**: 800 líneas, ~29 500 caracteres
 
 ```text
   ✓ test case number 0 passed fine
@@ -100,7 +90,7 @@ flowchart LR
   ✓ test case number 799 passed fine
 ```
 
-</td><td>
+**Después**: ~3 300 caracteres (−89 %)
 
 ```text
   ✓ test case number 0 passed fine
@@ -113,9 +103,6 @@ flowchart LR
 [token-saver: output compacted from 29508 chars.
  Full output: …/token-saver-….log]
 ```
-
-</td></tr>
-</table>
 
 Los comandos con los que Claude pide una salida concreta a propósito **no se tocan nunca**: `cat`, `sed`, `head`, `tail`, `grep`, `rg`, `awk`, `jq`, `git diff`, `git show`, `git blame`. Para saltarte el recorte en cualquier otro comando, añade `# full` al final.
 
@@ -287,7 +274,8 @@ token-saver/
 ├── .claude-plugin/
 │   └── marketplace.json         # marketplace "pgdiaz-tools"
 ├── assets/
-│   └── banner.svg
+│   ├── banner.svg
+│   └── context-growth.svg
 └── plugins/token-saver/
     ├── .claude-plugin/
     │   └── plugin.json          # manifiesto del plugin

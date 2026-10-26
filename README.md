@@ -243,25 +243,41 @@ No hay que hacer nada: al enviar un mensaje, el asesor lo clasifica en local y, 
 | 🟡 Normal | implementar un endpoint, arreglar un bug, un componente, tests | Sonnet · esfuerzo medio |
 | 🔴 Compleja | arquitectura, refactor, migración, seguridad, rendimiento, bugs intermitentes | Opus · esfuerzo alto |
 
-**Los avisos que verás**
+**Así se ve un aviso**
 
-| Situación | Aviso |
-|---|---|
-| Primer mensaje de la sesión | `Tarea compleja → recomendado: Opus · esfuerzo alto. Es el mejor momento para elegir: el contexto está vacío.` |
-| Opus para algo ligero | `Tarea ligera → basta con Haiku · esfuerzo bajo. Estás en Opus: gastarías de más. Cámbialo con /model.` |
-| Sonnet para algo complejo | `Tarea compleja → mejor Opus · esfuerzo alto. Estás en Sonnet: puede quedarse corto.` |
-| Empiezas otra tarea con >40k de contexto | `Parece una tarea nueva y arrastras ~80k de contexto… /clear antes de empezar.` |
-| Vuelves tras más de 1 h | `2 h sin actividad: el caché ha caducado y este mensaje re-procesa ~80k a precio completo.` |
-| El contexto pasa de 150k (y cada 100k más) | `El contexto va por ~200k… ¿Otra tarea? /clear. ¿La misma? /compact.` |
+Por ejemplo, si estás en Opus a mitad de una sesión de 169k y pides «arregla el typo del footer», Claude abre su respuesta con esto:
+
+> **🧭 token-saver**
+>
+> - 🟢 **Tarea ligera → Haiku · esfuerzo bajo** · Estás en Opus: gastarías de más. 👉 **Con ~169k de contexto, cambiar ahora lo re-procesa todo: haz `/clear` y cambia con `/model`**
+> - 🧹 **Contexto: ~169k tokens** · Cada mensaje lo vuelve a procesar entero. 👉 **¿Otra tarea? `/clear` · ¿La misma? `/compact`**
+
+Cada aviso tiene tres partes: **qué pasa**, **por qué importa** y 👉 **qué hacer**.
+
+**Cuándo avisa**
+
+| | Situación | Qué te dice |
+|---|---|---|
+| 🟢🟡🔴 | **Empiezas una tarea** (primer mensaje, cambio de tarea o tras `/clear`) | Qué modelo y esfuerzo pide la tarea, y si el tuyo encaja |
+| 🟢🟡🔴 | **A mitad de tarea, el modelo no encaja** (Opus para un typo, Sonnet para una migración) | El modelo adecuado y cuándo cambiar: ya con `/model` si el contexto es pequeño, o tras `/clear` si es grande |
+| 🆕 | **Cambias de tarea** con más de 40k de contexto | Que hagas `/clear` antes de empezar |
+| ⏰ | **Vuelves tras más de 1 h** | Que el caché ha caducado y el mensaje se cobra entero |
+| 🧹 | **El contexto pasa de 150k** (y cada 100k más) | `/clear` si es otra tarea, `/compact` si es la misma |
+| ✍️ | **Empiezas con un prompt vago** | Que Claude va a afinarlo con el prompter |
+
+**Dónde lo ves**
+
+- **En la terminal**, como aviso de Claude Code. No gasta tokens.
+- **En la app de escritorio**, el aviso nativo es un toast pequeño que se pasa por alto. Por eso Claude abre su respuesta con el bloque de arriba. Cuesta ~80 tokens, y solo en los mensajes que tienen aviso. Con `TOKEN_SAVER_RELAY` puedes activarlo (`on`) o quitarlo (`off`) en cualquier sitio.
 
 **Habla tu idioma**: si escribes en español, los avisos salen en español. Si escribes en inglés, en inglés.
 
 **Reglas para que no sea pesado**
 
 - Los seguimientos cortos («sí», «dale», «hazlo ya», «continúa») y los comandos `/…` no se analizan nunca.
-- A mitad de sesión solo opina si el mensaje tiene señales claras. Sin ellas, se calla.
-- Solo propone bajar de modelo con menos de 40k de contexto. Con más, cambiar obliga a re-procesarlo todo y el ahorro se pierde, así que te sugiere hacerlo tras un `/clear`.
+- A mitad de tarea solo opina sobre el modelo si el mensaje tiene señales claras y el modelo no encaja.
 - No repite el mismo consejo hasta pasados 8 mensajes.
+- El texto que pegas o citas no cuenta como «cambio de tarea».
 
 **Modo `block`**: con `TOKEN_SAVER_ADVISOR=block`, el asesor detiene el mensaje la primera vez para que cambies de modelo o hagas `/clear` **antes** de que Claude empiece. Si reenvías el mismo mensaje, pasa sin más.
 
@@ -290,6 +306,7 @@ Todo se ajusta con variables de entorno. Lo más cómodo es ponerlas en el bloqu
 | Variable | Por defecto | Qué controla |
 |---|---|---|
 | `TOKEN_SAVER_ADVISOR` | `warn` | `warn` avisa, `block` detiene el mensaje una vez para que cambies antes, `off` desactiva el asesor |
+| `TOKEN_SAVER_RELAY` | `auto` | Si Claude repite el aviso al principio de su respuesta. `auto`: solo en la app de escritorio. `on`: siempre. `off`: nunca (0 tokens) |
 | `TOKEN_SAVER_PROMPTER` | `auto` | `off` desactiva el prompter automático. Para saltarlo una vez, añade `#go` al mensaje |
 | `TOKEN_SAVER_LANG` | `auto` | Idioma de los avisos. `auto` responde en el idioma en que escribes (español o inglés). `es` o `en` lo fijan |
 | `TOKEN_SAVER_WARN_AT` | `150000` | Tokens de contexto a partir de los que llega el primer aviso de tamaño |

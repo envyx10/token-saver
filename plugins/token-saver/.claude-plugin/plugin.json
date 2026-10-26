@@ -1,6 +1,6 @@
 {
   "name": "token-saver",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Spend fewer tokens in Claude Code: advises model, effort and when to /clear or /compact before each task, sharpens vague prompts with a prompter skill, compacts noisy Bash output, a cheap Haiku scout agent and /token-saver:audit.",
   "author": {
     "name": "envyx10",

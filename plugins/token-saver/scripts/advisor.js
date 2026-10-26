@@ -7,7 +7,9 @@
 //   - a task starts with a vague prompt (then Claude runs token-saver:prompter).
 // Everything runs locally: the classifier is keyword-based and the advice is a
 // systemMessage shown to you, not added to Claude's context. Zero tokens,
-// except the one-line prompter instruction (~60 tokens) when a prompt is vague.
+// except the one-line prompter instruction (~60 tokens) when a prompt is vague,
+// and on the desktop app, which doesn't show systemMessage, a line asking
+// Claude to relay the advice (~50 tokens, only when there is advice).
 //
 // Env:
 //   TOKEN_SAVER_ADVISOR   warn (default) | block | off
@@ -28,7 +30,10 @@ const MODE = (process.env.TOKEN_SAVER_ADVISOR || "warn").toLowerCase();
 const PROMPTER = (process.env.TOKEN_SAVER_PROMPTER || "auto").toLowerCase();
 // What Claude reads when a prompt is vague. English on purpose: it's for Claude.
 const PROMPTER_CONTEXT = 'token-saver: this request looks underspecified. Before doing any work, invoke the Skill tool with skill "token-saver:prompter" and follow it. Do not mention this note.';
-const WARN_AT = Number(process.env.TOKEN_SAVER_WARN_AT || 150000);
+// Same for the advice on the desktop app (~50 tokens, only on prompts that get advice).
+const DESKTOP = process.env.CLAUDE_CODE_ENTRYPOINT === "claude-desktop";
+const RELAY_CONTEXT = (advice) => `token-saver advice for the user, which their app does not display: start your reply with this exact line, then carry on as usual: "🧭 token-saver · ${advice}"`;
+const WARN_AT =Number(process.env.TOKEN_SAVER_WARN_AT || 150000);
 const STEP = 100000;
 const BIG = 40000;          // context worth clearing before a new task
 const IDLE_MIN = 60;        // 1h prompt-cache TTL
@@ -206,7 +211,11 @@ function main(input) {
       out = { decision: "block", reason: msg + "\n" + T.block };
     } else {
       out = { systemMessage: msg };
-      if (sharpen) out.hookSpecificOutput = { hookEventName: "UserPromptSubmit", additionalContext: PROMPTER_CONTEXT };
+      // The desktop app doesn't draw a hook's systemMessage, so there Claude relays it.
+      const context = [];
+      if (DESKTOP) context.push(RELAY_CONTEXT(notes.join(" ")));
+      if (sharpen) context.push(PROMPTER_CONTEXT);
+      if (context.length) out.hookSpecificOutput = { hookEventName: "UserPromptSubmit", additionalContext: context.join("\n") };
     }
   }
   try { fs.writeFileSync(stateFile, JSON.stringify(state)); } catch {}
